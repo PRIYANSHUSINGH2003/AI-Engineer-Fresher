@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Communication Assistant</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .analytics { margin: 20px 0; }
+        .urgent { background-color: #ffcccc; }
+        button { margin-left: 10px; padding: 5px 10px; cursor: pointer; }
+        #issueChart { max-width: 600px; }
+        .error { color: red; }
+        #loading { display: none; text-align: center; margin: 20px; }
+        #loading.show { display: block; }
+    </style>
+</head>
+<body>
+    <h1>AI-Powered Communication Assistant</h1>
+    <div id="loading" class="show">
+        <p>Loading emails, please wait...</p>
+    </div>
+    <div class="analytics">
+        <h2>Analytics (Last 24 Hours)</h2>
+        <p>Total Emails: {{ analytics.total_emails }}</p>
+        <p>Resolved Emails: {{ analytics.resolved_emails }}</p>
+        <p>Pending Emails: {{ analytics.pending_emails }}</p>
+        {% if analytics.issue_counts %}
+            <canvas id="issueChart" width="400" height="200"></canvas>
+        {% else %}
+            <p class="error">No analytics data available.</p>
+        {% endif %}
+    </div>
+    <h2>Support Emails</h2>
+    {% if emails %}
+        <table>
+            <tr>
+                <th>Sender</th>
+                <th>Subject</th>
+                <th>Body</th>
+                <th>Date</th>
+                <th>Issue Type</th>
+                <th>Sentiment</th>
+                <th>Priority</th>
+                <th>Response</th>
+            </tr>
+            {% for email in emails %}
+            <tr class="{{ 'urgent' if email.priority == 'Urgent' else '' }}">
+                <td>{{ email.sender }}</td>
+                <td>{{ email.subject }}</td>
+                <td>{{ email.body }}</td>
+                <td>{{ email.sent_date }}</td>
+                <td>{{ email.issue_type }}</td>
+                <td>{{ email.sentiment }}</td>
+                <td>{{ email.priority }}</td>
+                <td>{{ email.response }} <button onclick="alert('Editing response for: {{ email.subject | escape }}')">Edit</button></td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p class="error">No emails to display.</p>
+    {% endif %}
+    <script>
+        // Hide loading indicator when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            const loading = document.getElementById('loading');
+            setTimeout(() => {
+                loading.classList.remove('show');
+            }, 1000); // Adjust timeout based on processing time
+        });
+
+        // Render chart if data exists
+    const issueLabels = JSON.parse('{{ analytics.issue_counts.keys() | tojson | safe }}');
+    const issueData = JSON.parse('{{ analytics.issue_counts.values() | tojson | safe }}');
+        if (issueLabels && issueData && issueLabels.length > 0) {
+            const ctx = document.getElementById('issueChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: issueLabels,
+                    datasets: [{
+                        label: 'Number of Emails',
+                        data: issueData,
+                        backgroundColor: ['#36A2EB', '#FF6384', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C9CBCF', '#7BC043', '#E7E9ED'],
+                        borderColor: ['#2A80B9', '#CC4F67', '#CCA33D', '#3A9696', '#7747CC', '#CC7F33', '#A0A2A6', '#609933', '#B5B7BA'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: { beginAtZero: true, title: { display: true, text: 'Number of Emails' } },
+                        x: { title: { display: true, text: 'Issue Type' } }
+                    },
+                    plugins: { title: { display: true, text: 'Issue Distribution' } }
+                }
+            });
+        } else {
+            console.error('No issue data available for chart.');
+        }
+    </script>
+</body>
+</html>
